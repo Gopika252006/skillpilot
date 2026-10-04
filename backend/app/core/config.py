@@ -3,8 +3,8 @@ from pydantic import BaseModel
 from typing import List
 
 class Settings(BaseModel):
-    PROJECT_NAME: str = "CodePilot"
-    PROJECT_TAGLINE: str = "An AI that knows what you know"
+    PROJECT_NAME: str = "SkillPilot"
+    PROJECT_TAGLINE: str = "Your AI-powered personal learning intelligence"
     API_V1_STR: str = "/api"
     SECRET_KEY: str = os.getenv("SECRET_KEY", "codepilot-super-secret-key-for-dev-challenge-2026-hacktoberfest")
     ALGORITHM: str = "HS256"
@@ -24,7 +24,14 @@ class Settings(BaseModel):
     MAX_FILE_SIZE_MB: int = 15
     ALLOWED_EXTENSIONS: List[str] = [".pdf", ".txt", ".md", ".png", ".jpg", ".jpeg", ".webp"]
     
-    # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "*"]
+    # CORS: Explicit allowed origins (never wildcard '*' with credentials)
+    CORS_ORIGINS: List[str] = [
+        origin.strip()
+        for origin in os.getenv(
+            "CORS_ORIGINS",
+            "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000"
+        ).split(",")
+        if origin.strip()
+    ]
 
 settings = Settings()

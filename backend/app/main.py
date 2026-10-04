@@ -30,16 +30,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global error handler
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Global error handler (avoids leaking stack traces or internal server details)
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled error processing {request.method} {request.url.path}: {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"detail": f"Internal server error: {str(exc)}"}
+        content={"detail": "An internal server error occurred."}
     )
 
 # Include API Routers
 app.include_router(health.router)
+app.include_router(health.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(profile.router, prefix="/api")
 app.include_router(code.router, prefix="/api")
@@ -53,8 +59,8 @@ app.include_router(aptitude.router, prefix="/api")
 app.include_router(interview.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
 
-# Serve uploaded files safely
-app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
+# Note: Private files are strictly served via authenticated endpoint:
+# GET /api/vault/items/{item_id}/file (with user ownership verification)
 
 @app.get("/")
 def root():

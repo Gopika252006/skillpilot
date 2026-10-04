@@ -120,6 +120,7 @@ class KnowledgeGraphEdge(BaseModel):
 class KnowledgeGraphResponse(BaseModel):
     nodes: List[KnowledgeGraphNode]
     edges: List[KnowledgeGraphEdge]
+    links: Optional[List[KnowledgeGraphEdge]] = None
     stats: Dict[str, Any]
 
 # --- Knowledge Vault ---
@@ -152,7 +153,6 @@ class VaultItemOut(BaseModel):
     content_type: str
     title: str
     content: str
-    file_path: Optional[str] = None
     file_name: Optional[str] = None
     file_size: Optional[int] = None
     mime_type: Optional[str] = None
@@ -170,7 +170,7 @@ class VaultItemOut(BaseModel):
         from_attributes = True
 
 class VaultAskRequest(BaseModel):
-    item_id: int
+    item_id: Optional[int] = None
     question: str
 
 class VaultActionRequest(BaseModel):

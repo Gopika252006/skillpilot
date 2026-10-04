@@ -47,12 +47,30 @@ class OllamaProvider(BaseAIProvider):
                 return json.loads(response_text[start:end])
             raise ValueError(f"Ollama response was not valid JSON: {response_text[:100]}...")
 
+    _last_check_time = 0.0
+    _is_live = False
+
     def is_available(self) -> bool:
-        """Check if local Ollama daemon is responsive and model is ready."""
+        """Cached fast check with low-latency socket test (eliminates blocking on offline ports)."""
+        import time
+        now = time.time()
+        # Cache negative/positive result for 5 seconds to prevent hammering offline socket
+        if now - self._last_check_time < 5.0:
+            return self._is_live
+
+        self._last_check_time = now
         try:
-            r = requests.get(f"{self.base_url}/api/tags", timeout=2)
-            return r.status_code == 200
+            import socket
+            from urllib.parse import urlparse
+            parsed = urlparse(self.base_url)
+            host = parsed.hostname or '127.0.0.1'
+            port = parsed.port or 11434
+            # 150ms timeout raw TCP connection check
+            with socket.create_connection((host, port), timeout=0.15):
+                self._is_live = True
+                return True
         except Exception:
+            self._is_live = False
             return False
 
     def analyze_code(self, problem_title: str, problem_statement: str, language: str, user_code: str, user_context: Dict[str, Any]) -> Dict[str, Any]:

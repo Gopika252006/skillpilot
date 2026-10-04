@@ -47,6 +47,19 @@ def seed():
     )
     db.add(admin_user)
     db.commit()
+    db.refresh(admin_user)
+
+    admin_profile = UserProfile(
+        user_id=admin_user.id,
+        target_role="Engineering Manager / Systems Architect",
+        experience_level="Advanced",
+        learning_goals="Platform health, metrics oversight, and AI runtime stability.",
+        weekly_hours=10,
+        onboarding_completed=True
+    )
+    admin_profile.current_technologies = ["FastAPI", "Python", "Docker", "Kubernetes"]
+    admin_profile.interests = ["System Design", "Cloud", "DevOps"]
+    db.add(admin_profile)
 
     # User Profile
     profile = UserProfile(

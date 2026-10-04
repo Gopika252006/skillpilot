@@ -14,7 +14,7 @@ export default function AppLayout() {
       <div className="min-h-screen bg-dark-900 flex items-center justify-center text-slate-400">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-xs font-mono">Initializing CodePilot Personal Technical Memory...</p>
+          <p className="text-xs font-mono">Initializing SkillPilot Personal Technical Memory...</p>
         </div>
       </div>
     );

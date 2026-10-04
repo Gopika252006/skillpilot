@@ -46,17 +46,18 @@ Submit any problem and solution in **Python, Java, C++, or JavaScript**:
 ### 3. Knowledge Vault (Personal Technical Second Brain)
 Whenever you learn outside CodePilot, capture it in seconds:
 - **Rich Content Types**: Notes, Documents (PDF, Markdown, TXT), Diagrams & Architecture Screenshots, Mathematical Formulas (LaTeX / Master Theorem), Code Snippets, and Curated Links.
-- **Quick Capture Action**: Global `+ Quick Capture` modal accessible anywhere.
-- **Grounded "Ask This Document"**: Query your uploaded PDF or notes; answers are strictly grounded in your saved material with cited excerpts.
+- **Fast Indexed Search**: Multi-field indexed keyword & tag search across titles, contents, folders, and technical topics.
+- **Grounded "Ask This Document"**: Context-window grounded Q&A over saved materials with direct sentence excerpts and citations.
+- **Secure Authenticated Streaming**: Uploaded files are strictly isolated and streamed through `GET /api/vault/items/{item_id}/file` with ownership verification (no public static file mounts).
 - **Smart Revision Integration**: When the system detects a concept marked `NEEDS_REVISION`, it highlights matching saved reference materials ready for review.
 
 ### 4. Ask My AI (Context-Aware Technical Companion)
-A personal technical companion grounded in your verified technical memory.
+A personal technical companion grounded in your verified technical memory:
 - Uses your target role, strong skills, weak concepts, recent code analyses, and active weekly focus.
 - Displays explicit **Personal Context Badges** on responses (e.g., *“Target: Backend Software Engineer”*, *“DSA History: Sliding Window & Binary Search”*).
 
 ### 5. Adaptive Weekly Plan & Weekend Assessment
-- **15-20 Min / Day Mission**: Monday-style daily tasks targeting your specific knowledge gaps without causing burnout.
+- **15-20 Min / Day Mission**: Daily tasks targeting your specific knowledge gaps without causing burnout.
 - **Adaptive Weekend Test**: 5-question targeted assessment evaluating retention. Scoring feeds directly back into Personal Technical Memory to adapt next week's focus.
 
 ### 6. Career Path & Skill Gap Intelligence
@@ -72,12 +73,22 @@ A personal technical companion grounded in your verified technical memory.
 
 ## 🛡️ Why Open Innovation Matters
 
-CodePilot puts **Open-Weight AI at its core** for four fundamental reasons:
+CodePilot puts **Open-Weight AI at its core**:
 
 1. **Absolute Data Privacy**: A developer's proprietary code, weak areas, and interview prep notes never leave their machine. Zero telemetry, zero closed-API retention.
 2. **Zero Recurring Toll**: Consistent developers solve dozens of problems weekly. Open models running locally via Ollama avoid per-token billing and rate limits.
 3. **Model Replaceability**: Decoupled AI Orchestrator supports hot-swapping between **Llama 3.2 3B**, **Qwen 2.5 Coder 7B**, **Mistral 7B**, or **DeepSeek R1 Distill**.
-4. **Offline Resilience**: Learn on planes, trains, or during hackathons without active internet.
+4. **Deterministic Offline Resilience**: When Ollama is offline or not installed, CodePilot's built-in rule-based and AST pattern engine seamlessly powers all features with zero downtime.
+
+---
+
+## 🔒 Security Hardening
+
+- **Admin Self-Registration Blocked**: Public registration unconditionally forces the `USER` role. Admin accounts can only be created via server-side bootstrap/seed scripts.
+- **User Data Isolation**: Every database query filters strictly by `user_id == current_user.id` resolved from cryptographically verified JWT tokens.
+- **Private File Protection**: Public static uploads mounts are eliminated. All files are streamed through authenticated endpoints with ownership and path-traversal checks.
+- **CORS Hardening**: Explicit allowed origins (`http://localhost:5173`, `http://127.0.0.1:5173`, `http://localhost:3000`). Never allows `*` with credentials.
+- **Sanitized Errors**: Server-side error logging with sanitized generic client error responses.
 
 ---
 
@@ -95,7 +106,7 @@ codepilot/
 │   │   ├── services/     # KnowledgeEngine, CodeService, VaultService, etc.
 │   │   ├── storage/      # Secure file storage with path-traversal prevention
 │   │   └── main.py       # FastAPI application
-│   ├── tests/            # Automated pytest suite (Auth, User Isolation, Code Analyzer)
+│   ├── tests/            # Automated pytest suite on isolated test DB fixture
 │   └── seed_demo.py      # Seed script for Arjun Sharma demo profile
 │
 ├── frontend/
@@ -116,20 +127,19 @@ codepilot/
 ### 1. Prerequisites
 - **Python 3.10+**
 - **Node.js 18+** & **npm**
-- *(Optional for full local open weights)*: [Ollama](https://ollama.com/) running `ollama run llama3.2:3b`.  
-  *(Note: If Ollama is offline, CodePilot's built-in Local Inference Engine seamlessly handles all requests with zero downtime!)*
+- *(Optional for open-weight LLM inference)*: [Ollama](https://ollama.com/) running `ollama run llama3.2:3b`.  
+  *(Note: If Ollama is offline, CodePilot's built-in rule-based fallback engine seamlessly handles all requests with zero downtime!)*
 
 ### 2. Backend Setup
 ```bash
 cd backend
 python -m pip install -r requirements.txt
-# Or: pip install fastapi uvicorn sqlalchemy pydantic python-jose bcrypt requests
 
 # Seed the demo database with Arjun's profile
 python seed_demo.py
 
-# Run the test suite
-python -m pytest tests
+# Run the test suite on isolated test database
+python -m pytest -q
 
 # Start backend server
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
@@ -162,9 +172,12 @@ To inspect the minimal Admin Portal:
 
 | Module | Verification | Status |
 |---|---|---|
+| **Health & Telemetry** | `/health` and `/api/health` 200 OK | ✅ Verified |
 | **Authentication** | Registration, Login, JWT verification, PBKDF2/bcrypt hashing | ✅ Verified |
-| **User Data Isolation** | User A cannot query or read User B's vault items or private code | ✅ Tested (`test_isolation.py`) |
-| **Admin Authorization** | Non-admin users are strictly rejected with 403 Forbidden | ✅ Tested |
+| **Admin Self-Reg Block**| Public registration with `role='ADMIN'` forced to `USER` | ✅ Verified (`test_auth.py`) |
+| **User Data Isolation** | User A cannot query or read User B's vault items or private files | ✅ Verified (`test_isolation.py`) |
+| **Private File Streaming**| `GET /api/vault/items/{id}/file` authenticated & ownership verified | ✅ Verified |
+| **Admin Authorization** | Non-admin users are strictly rejected with 403 Forbidden | ✅ Verified |
 | **Code Analyzer** | Big-O detection, boundary bug alerts, progressive hints | ✅ Verified |
 | **Knowledge Engine** | Evidence-driven confidence update and state transitions | ✅ Verified |
 | **Knowledge Vault** | Multi-type capture, search, grounded "Ask This", AI actions | ✅ Verified |
@@ -172,7 +185,7 @@ To inspect the minimal Admin Portal:
 | **Weekly Plan** | 15-20 min/day adaptive tasks with interactive completion toggles | ✅ Verified |
 | **Assessment** | 5-question adaptive quiz with scoring & feedback loop | ✅ Verified |
 | **Career Path** | Target role alignment, readiness score, high-value projects | ✅ Verified |
-| **Open AI Health** | Live inference runtime diagnostics and zero-telemetry guarantee | ✅ Verified |
+| **Aptitude & Interview** | Sprint questions, mock verbal sessions, and structured debriefs | ✅ Verified |
 
 ---
 
@@ -181,4 +194,4 @@ To inspect the minimal Admin Portal:
 - **Hackathon:** DEV.to Hacktoberfest Weekend Challenge 2026 — *“Build for a Friend”*
 - **Project Name:** CodePilot
 - **Tagline:** *“An AI that knows what you know.”*
-- **Built With:** React, Tailwind CSS, Vite, FastAPI, SQLAlchemy, SQLite, Ollama / Local Open-Weight Inference Engine.
+- **Built With:** React, Tailwind CSS, Vite, FastAPI, SQLAlchemy, SQLite, Ollama / Local Fallback Engine.

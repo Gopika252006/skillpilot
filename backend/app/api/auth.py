@@ -17,12 +17,12 @@ def register(user_in: UserRegister, db: Session = Depends(get_db)):
             detail="A user with this email address already exists."
         )
 
-    # First user can optionally be made admin if role is ADMIN
+    # Public registration MUST always assign the USER role. Admin accounts cannot self-register.
     user = User(
         email=user_in.email.lower(),
         hashed_password=get_password_hash(user_in.password),
         full_name=user_in.full_name,
-        role=user_in.role if user_in.role in ["USER", "ADMIN"] else "USER",
+        role="USER",
         is_active=True
     )
     db.add(user)

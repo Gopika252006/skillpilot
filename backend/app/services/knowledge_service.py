@@ -61,13 +61,13 @@ class KnowledgeService:
                 user_id=user_id,
                 name=concept_name,
                 category=resolved_category,
-                status="LEARNING",
-                confidence=0.3,
-                practice_count=1,
-                success_rate=0.7,
+                status="NOT_STARTED",
+                confidence=0.0,
+                practice_count=0,
+                success_rate=0.0,
                 repeated_mistakes=[],
                 related_concepts=PREREQUISITE_MAP.get(concept_name, []),
-                last_practiced=datetime.utcnow()
+                last_practiced=None
             )
             db.add(concept)
             db.commit()
@@ -90,14 +90,16 @@ class KnowledgeService:
         for name in concepts_detected:
             concept = KnowledgeService.get_or_create_concept(db, user_id, name)
             
-            # Update counts
-            concept.practice_count = (concept.practice_count or 0) + 1
-            current_success = concept.success_rate or 0.5
+            # Update counts strictly from verified practice
+            old_count = concept.practice_count or 0
+            new_count = old_count + 1
+            concept.practice_count = new_count
             
-            # Recalculate moving average success rate
-            weight = 1.0 / concept.practice_count
-            new_success = current_success * (1.0 - weight) + (1.0 if is_successful else 0.0) * weight
-            concept.success_rate = round(new_success, 2)
+            if old_count == 0:
+                concept.success_rate = 1.0 if is_successful else 0.0
+            else:
+                weight = 1.0 / new_count
+                concept.success_rate = round(concept.success_rate * (1.0 - weight) + (1.0 if is_successful else 0.0) * weight, 2)
             
             # Recalculate confidence
             base_conf = min(0.95, (concept.practice_count * 0.08) + (concept.success_rate * 0.5))
@@ -170,7 +172,7 @@ class KnowledgeService:
             "average_confidence": avg_confidence
         }
 
-        return KnowledgeGraphResponse(nodes=nodes, edges=edges, stats=stats)
+        return KnowledgeGraphResponse(nodes=nodes, edges=edges, links=edges, stats=stats)
 
     @staticmethod
     def get_user_concepts(db: Session, user_id: int) -> List[KnowledgeConcept]:

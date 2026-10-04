@@ -16,6 +16,40 @@ def get_current_assessment(
     """Retrieve or generate the active weekly adaptive assessment."""
     return assessment_service.get_or_create_weekly_assessment(db, current_user.id)
 
+@router.post("/generate", response_model=AssessmentOut)
+def generate_assessment(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Generate or retrieve the active weekend assessment."""
+    return assessment_service.get_or_create_weekly_assessment(db, current_user.id)
+
+@router.get("/history")
+def get_assessment_history(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Retrieve all past completed assessments with scores and feedback."""
+    from app.models.models import Assessment
+    assessments = db.query(Assessment).filter(
+        Assessment.user_id == current_user.id
+    ).order_by(Assessment.created_at.desc()).all()
+    return [
+        {
+            "id": a.id,
+            "title": a.title,
+            "status": a.status,
+            "score": a.score,
+            "total_score": a.total_score,
+            "feedback_summary": a.feedback_summary,
+            "strong_areas": a.strong_areas,
+            "weak_areas": a.weak_areas,
+            "completed_at": a.completed_at,
+            "created_at": a.created_at
+        }
+        for a in assessments
+    ]
+
 @router.post("/{assessment_id}/submit", response_model=AssessmentOut)
 def submit_assessment(
     assessment_id: int,

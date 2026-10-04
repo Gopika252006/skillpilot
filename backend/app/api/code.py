@@ -23,6 +23,7 @@ def analyze_code(
     return code_service.analyze_and_record(db, current_user.id, req)
 
 @router.get("/history")
+@router.get("/submissions")
 def get_analysis_history(
     limit: int = 20,
     db: Session = Depends(get_db),

@@ -31,6 +31,46 @@ def submit_aptitude_attempt(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.post("/submit")
+def submit_aptitude_batch(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Batch submit entire sprint and get aggregate score."""
+    answers = payload.get("answers", {})
+    sprint = aptitude_service.get_daily_sprint()
+    correct_count = 0
+    total = len(sprint)
+
+    for idx, q in enumerate(sprint):
+        # Support either string key or int key
+        user_sel = answers.get(str(idx), answers.get(idx, answers.get(q.get("id"))))
+        if user_sel is not None:
+            # If user_sel is option string like 'A', 'B'
+            if isinstance(user_sel, str) and user_sel in ['A', 'B', 'C', 'D']:
+                opt_idx = ord(user_sel) - ord('A')
+            elif isinstance(user_sel, int):
+                opt_idx = user_sel
+            else:
+                opt_idx = 0
+            
+            res = aptitude_service.record_attempt(
+                db=db,
+                user_id=current_user.id,
+                question_idx=idx,
+                selected_option=opt_idx,
+                time_taken_seconds=30
+            )
+            if res.get("is_correct"):
+                correct_count += 1
+
+    return {
+        "score": correct_count,
+        "total": total,
+        "percentage": round((correct_count / max(total, 1)) * 100, 1)
+    }
+
 @router.get("/stats")
 def get_aptitude_stats(
     db: Session = Depends(get_db),

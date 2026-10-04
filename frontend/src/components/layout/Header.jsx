@@ -18,9 +18,7 @@ export default function Header() {
   return (
     <header className="h-14 border-b border-slate-800/80 bg-dark-900/80 backdrop-blur-md px-6 flex items-center justify-between shrink-0 sticky top-0 z-30">
       <div className="flex items-center gap-3">
-        <span className="text-xs font-medium text-slate-400">DEV Hacktoberfest 2026</span>
-        <span className="text-slate-600 text-xs">•</span>
-        <span className="text-xs font-semibold text-slate-200">Built for a Real Friend</span>
+        <span className="text-xs font-medium text-slate-400">SkillPilot</span>
       </div>
 
       <div className="flex items-center gap-3">

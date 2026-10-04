@@ -53,8 +53,8 @@ export default function Login() {
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-500 shadow-xl shadow-brand-500/25 text-white mb-2">
             <Sparkles className="w-6 h-6" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">CodePilot</h1>
-          <p className="text-xs text-slate-400">“An AI that knows what you know.”</p>
+          <h1 className="text-2xl font-bold tracking-tight text-white">SkillPilot</h1>
+          <p className="text-xs text-slate-400">Your AI-powered personal learning intelligence</p>
         </div>
 
         {/* Demo Fast Login Callout */}
@@ -62,7 +62,7 @@ export default function Login() {
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-brand-300 flex items-center gap-1.5">
               <UserCheck className="w-4 h-4" />
-              Hackathon Judge / Reviewer Demo
+              Demo
             </span>
             <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-300">
               Instant

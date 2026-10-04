@@ -154,8 +154,40 @@ def ask_vault_item(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
+@router.get("/items/{item_id}/file")
+def get_vault_file(
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Authenticated, user-isolated file streaming for Knowledge Vault uploads.
+    Verifies ownership before streaming and prevents path traversal.
+    """
+    import os
+    from fastapi.responses import FileResponse
+    from app.core.config import settings
+
+    item = vault_service.get_item_by_id(db, current_user.id, item_id)
+    if not item or not item.file_path:
+        raise HTTPException(status_code=404, detail="File not found or not owned by current user.")
+
+    upload_dir_abs = os.path.abspath(settings.UPLOAD_DIR)
+    file_path_abs = os.path.abspath(item.file_path)
+    if not file_path_abs.startswith(upload_dir_abs) or not os.path.isfile(file_path_abs):
+        raise HTTPException(status_code=404, detail="File not found on storage.")
+
+    return FileResponse(
+        path=file_path_abs,
+        filename=item.file_name or "document",
+        media_type=item.mime_type or "application/octet-stream"
+    )
+
 @router.post("/action")
-def perform_ai_study_action(req: VaultActionRequest):
+def perform_ai_study_action(
+    req: VaultActionRequest,
+    current_user: User = Depends(get_current_user)
+):
     """Execute ad-hoc AI study actions: summarize, explain, or generate flashcards."""
     return vault_service.perform_ai_action(
         item_content=req.content or "",
@@ -164,6 +196,7 @@ def perform_ai_study_action(req: VaultActionRequest):
     )
 
 @router.get("/revisions")
+@router.get("/revision")
 def get_revision_recommendations(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)

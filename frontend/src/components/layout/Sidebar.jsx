@@ -53,9 +53,9 @@ export default function Sidebar({ onOpenCapture }) {
           </div>
           <div>
             <h1 className="text-base font-bold tracking-tight text-white flex items-center gap-1.5">
-              CodePilot
+              SkillPilot
             </h1>
-            <p className="text-[10px] text-slate-400 font-medium">An AI that knows what you know</p>
+            <p className="text-[10px] text-slate-400 font-medium">Your AI-powered personal learning intelligence</p>
           </div>
         </div>
 

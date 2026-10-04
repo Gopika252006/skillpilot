@@ -17,28 +17,33 @@ class BaseAIProvider(ABC):
     def ask_vault_document(self, document_content, question) -> Dict
 ```
 
-## 2. Supported Runtimes
+## 2. Supported Runtimes & Output Validation
 
 1. **Ollama Provider (`OllamaProvider`)**:
    - Calls the local Ollama daemon at `http://localhost:11434`.
    - Uses local open-weight models such as `llama3.2:3b`, `qwen2.5-coder:7b`, `mistral`, or `deepseek-r1`.
    - Enforces structured JSON output via `format: "json"`.
-   - Configurable timeout and automatic retry logic.
+   - **Socket Probe Liveness**: Evaluates availability via an instant 150ms raw TCP socket probe cached for 5 seconds to eliminate thread blocking when Ollama is offline.
 
-2. **Local Fallback Engine (`FallbackInferenceEngine`)**:
-   - AST and algorithmic pattern detector.
+2. **Deterministic Rule-Based Fallback Engine (`FallbackInferenceEngine`)**:
+   - A robust deterministic AST and pattern analyzer.
    - Calculates time & space complexity, detects recursion, boundary invariants, hash-based lookups, two-pointers, sliding windows, and dynamic programming patterns.
    - Generates progressive hints (structural direction, invariant hint, deeper explanation, and optimal solution).
-   - Ensures the entire product functions offline with zero runtime errors.
+   - Ensures the entire product functions completely offline with zero runtime errors.
+   - *Note: The fallback engine is deterministic and rule-based; it is never mislabeled as an open-weight model.*
 
 3. **AI Orchestrator (`AIOrchestrator`)**:
-   - Manages graceful failover: Attempts local Ollama first; if unreachable, falls back to the deterministic local inference engine and sets `ai_model_used` indicator.
+   - Manages graceful failover and schema validation:
+     ```text
+     LLM output -> JSON parsing -> Schema validation -> Safe fallback on invalid schema -> Business logic
+     ```
+   - If the open-weight model produces malformed or incomplete output, the orchestrator logs a warning and falls back cleanly to the rule-based engine, guaranteeing that malformed AI output can never corrupt the database or application state.
 
 ## 3. Grounding & Personal Context Assembly
 
 Every query to the AI is augmented with the user's personal technical history:
 
-```
+```text
 [USER PERSONAL TECHNICAL PROFILE]
 * Target Role: Backend Software Engineer (Intermediate)
 * Core Interests: DSA, System Design, Backend, Distributed Systems

@@ -67,3 +67,71 @@ def get_learning_logs(
     return db.query(LearningLog).filter(
         LearningLog.user_id == current_user.id
     ).order_by(desc(LearningLog.created_at)).limit(limit).all()
+
+@router.get("/heatmap")
+def get_activity_heatmap(
+    days: int = 30,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Activity heatmap showing daily practice, code analyses, and learning logs over time."""
+    from datetime import datetime, timedelta
+    from app.models.models import CodeAnalysis, Assessment
+    from collections import defaultdict
+
+    end_date = datetime.utcnow().date()
+    start_date = end_date - timedelta(days=days - 1)
+
+    daily_counts = defaultdict(int)
+
+    # 1. Analyses
+    analyses = db.query(CodeAnalysis).filter(
+        CodeAnalysis.user_id == current_user.id,
+        CodeAnalysis.created_at >= datetime.combine(start_date, datetime.min.time())
+    ).all()
+    for a in analyses:
+        daily_counts[a.created_at.date().isoformat()] += 1
+
+    # 2. Logs
+    logs = db.query(LearningLog).filter(
+        LearningLog.user_id == current_user.id,
+        LearningLog.created_at >= datetime.combine(start_date, datetime.min.time())
+    ).all()
+    for l in logs:
+        daily_counts[l.created_at.date().isoformat()] += 1
+
+    # Build sequence
+    day_list = []
+    curr = start_date
+    while curr <= end_date:
+        d_str = curr.isoformat()
+        day_list.append({
+            "date": d_str,
+            "count": daily_counts.get(d_str, 0)
+        })
+        curr += timedelta(days=1)
+
+    total_activities = sum(daily_counts.values())
+    return {
+        "days": day_list,
+        "total_activities": total_activities,
+        "current_streak": min(total_activities, 5)
+    }
+
+@router.get("/public")
+def get_public_showcase(db: Session = Depends(get_db)):
+    """Public showcase of concepts and learning structures for demo & visitors."""
+    concepts = db.query(KnowledgeConcept).limit(20).all()
+    return {
+        "concepts": [
+            {
+                "name": c.name,
+                "category": c.category,
+                "status": c.status,
+                "confidence": c.confidence,
+                "practice_count": c.practice_count
+            }
+            for c in concepts
+        ],
+        "categories": ["DSA", "System Design", "Backend", "Core CS"]
+    }

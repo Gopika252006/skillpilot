@@ -8,10 +8,25 @@ from app.api.deps import get_current_user
 router = APIRouter(prefix="/profile", tags=["User Profile"])
 
 @router.get("", response_model=UserProfileOut)
-def get_profile(current_user: User = Depends(get_current_user)):
+def get_profile(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     profile = current_user.profile
     if not profile:
-        raise HTTPException(status_code=404, detail="Profile not found.")
+        profile = UserProfile(
+            user_id=current_user.id,
+            target_role="Backend Software Engineer",
+            experience_level="Intermediate",
+            learning_goals="Build mastery over complex DSA and distributed systems.",
+            weekly_hours=7,
+            onboarding_completed=False
+        )
+        profile.current_technologies = ["Python", "Java", "SQL"]
+        profile.interests = ["DSA", "System Design", "Backend"]
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
     return profile
 
 @router.put("", response_model=UserProfileOut)
